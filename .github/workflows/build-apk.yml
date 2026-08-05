@@ -46,7 +46,7 @@ jobs:
 
       - name: Build APK
         shell: bash
-        run: ./build.sh
+        run: bash ./build.sh
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
