@@ -1,0 +1,28 @@
+name: Export RatioSlime patch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/export-patch.yml"
+      - "patches/ratioslime.patch.gz.b64"
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decode patch
+        shell: bash
+        run: |
+          mkdir -p exported
+          base64 -d patches/ratioslime.patch.gz.b64 | gzip -dc > exported/ratioslime.patch
+      - name: Upload patch
+        uses: actions/upload-artifact@v4
+        with:
+          name: ratioslime-expanded-patch
+          path: exported/ratioslime.patch
+          retention-days: 1
