@@ -8,6 +8,8 @@ WORK_ROOT="$ROOT_DIR/work"
 WORK_DIR="${WORK_DIR:-$WORK_ROOT/SlimeVR-Server}"
 PATCH_ARCHIVE="$ROOT_DIR/patches/ratioslime.patch.gz.b64"
 PATCH_FILE="$WORK_ROOT/ratioslime.patch"
+PATCH_V2_ARCHIVE="$ROOT_DIR/patches/ratioslime-v2.patch.gz.b64"
+PATCH_V2_FILE="$WORK_ROOT/ratioslime-v2.patch"
 DIST_DIR="$ROOT_DIR/dist"
 
 require_command() {
@@ -31,8 +33,14 @@ if [[ ! -f "$PATCH_ARCHIVE" ]]; then
   exit 1
 fi
 
+if [[ ! -f "$PATCH_V2_ARCHIVE" ]]; then
+  echo "Feature patch archive not found: $PATCH_V2_ARCHIVE" >&2
+  exit 1
+fi
+
 mkdir -p "$WORK_ROOT" "$(dirname "$WORK_DIR")" "$DIST_DIR"
 base64 --decode "$PATCH_ARCHIVE" | gzip --decompress > "$PATCH_FILE"
+base64 --decode "$PATCH_V2_ARCHIVE" | gzip --decompress > "$PATCH_V2_FILE"
 
 if [[ ! -d "$WORK_DIR/.git" ]]; then
   rm -rf "$WORK_DIR"
@@ -48,6 +56,8 @@ git -C "$WORK_DIR" submodule update --init --recursive
 
 git -C "$WORK_DIR" apply --check "$PATCH_FILE"
 git -C "$WORK_DIR" apply "$PATCH_FILE"
+git -C "$WORK_DIR" apply --check "$PATCH_V2_FILE"
+git -C "$WORK_DIR" apply "$PATCH_V2_FILE"
 
 python3 "$WORK_DIR/scripts/ratio-math-smoke-test.py"
 
