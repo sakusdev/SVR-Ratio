@@ -8,8 +8,11 @@ WORK_ROOT="$ROOT_DIR/work"
 WORK_DIR="${WORK_DIR:-$WORK_ROOT/SlimeVR-Server}"
 PATCH_ARCHIVE="$ROOT_DIR/patches/ratioslime.patch.gz.b64"
 PATCH_FILE="$WORK_ROOT/ratioslime.patch"
-PATCH_V2_ARCHIVE="$ROOT_DIR/patches/ratioslime-v2.patch.gz.b64"
+PATCH_V2_B64="$WORK_ROOT/ratioslime-v2.patch.gz.b64"
+PATCH_V2_GZ="$WORK_ROOT/ratioslime-v2.patch.gz"
 PATCH_V2_FILE="$WORK_ROOT/ratioslime-v2.patch"
+PATCH_V2_B64_SHA256="8ad3ca82100a224c41f9b49823eac852dc8adb7e1767d93e0dd4778335d94494"
+PATCH_V2_GZ_SHA256="0e1cb62eddce116c7de5c1aeaf0c95274c46ca2c1f28ddcd8106aa134ba5019d"
 DIST_DIR="$ROOT_DIR/dist"
 
 require_command() {
@@ -19,7 +22,7 @@ require_command() {
   }
 }
 
-for command_name in git java node python3 base64 gzip; do
+for command_name in git java node python3 base64 gzip sha256sum; do
   require_command "$command_name"
 done
 
@@ -33,14 +36,22 @@ if [[ ! -f "$PATCH_ARCHIVE" ]]; then
   exit 1
 fi
 
-if [[ ! -f "$PATCH_V2_ARCHIVE" ]]; then
-  echo "Feature patch archive not found: $PATCH_V2_ARCHIVE" >&2
+shopt -s nullglob
+PATCH_V2_PARTS=("$ROOT_DIR"/patches/ratioslime-v2.part*)
+shopt -u nullglob
+if (( ${#PATCH_V2_PARTS[@]} == 0 )); then
+  echo "Feature patch parts were not found." >&2
   exit 1
 fi
 
 mkdir -p "$WORK_ROOT" "$(dirname "$WORK_DIR")" "$DIST_DIR"
 base64 --decode "$PATCH_ARCHIVE" | gzip --decompress > "$PATCH_FILE"
-base64 --decode "$PATCH_V2_ARCHIVE" | gzip --decompress > "$PATCH_V2_FILE"
+cat "${PATCH_V2_PARTS[@]}" | tr -d '[:space:]' > "$PATCH_V2_B64"
+printf '%s  %s\n' "$PATCH_V2_B64_SHA256" "$PATCH_V2_B64" | sha256sum --check --strict -
+base64 --decode "$PATCH_V2_B64" > "$PATCH_V2_GZ"
+printf '%s  %s\n' "$PATCH_V2_GZ_SHA256" "$PATCH_V2_GZ" | sha256sum --check --strict -
+gzip --test "$PATCH_V2_GZ"
+gzip --decompress --stdout "$PATCH_V2_GZ" > "$PATCH_V2_FILE"
 
 if [[ ! -d "$WORK_DIR/.git" ]]; then
   rm -rf "$WORK_DIR"
