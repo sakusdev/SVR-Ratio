@@ -22,7 +22,6 @@ jobs:
           git clone --filter=blob:none --no-checkout https://github.com/SlimeVR/SlimeVR-Server.git source
           git -C source fetch --depth 1 origin d7205bb2940de9c3c75921db19f5b9bc2b0bd9d9
           git -C source checkout --force d7205bb2940de9c3c75921db19f5b9bc2b0bd9d9
-          git -C source submodule update --init --recursive
           git -C source apply /tmp/ratioslime.patch
           mkdir -p exported
           cp /tmp/ratioslime.patch exported/ratioslime.patch
