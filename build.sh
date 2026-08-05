@@ -4,8 +4,10 @@ set -Eeuo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 UPSTREAM_REPOSITORY="https://github.com/SlimeVR/SlimeVR-Server.git"
 UPSTREAM_COMMIT="${UPSTREAM_COMMIT:-d7205bb2940de9c3c75921db19f5b9bc2b0bd9d9}"
-WORK_DIR="${WORK_DIR:-$ROOT_DIR/work/SlimeVR-Server}"
-PATCH_FILE="$ROOT_DIR/patches/ratioslime.patch"
+WORK_ROOT="$ROOT_DIR/work"
+WORK_DIR="${WORK_DIR:-$WORK_ROOT/SlimeVR-Server}"
+PATCH_ARCHIVE="$ROOT_DIR/patches/ratioslime.patch.gz.b64"
+PATCH_FILE="$WORK_ROOT/ratioslime.patch"
 DIST_DIR="$ROOT_DIR/dist"
 
 require_command() {
@@ -15,22 +17,22 @@ require_command() {
   }
 }
 
-require_command git
-require_command java
-require_command node
-require_command python3
+for command_name in git java node python3 base64 gzip; do
+  require_command "$command_name"
+done
 
 if [[ -z "${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}" ]]; then
   echo "ANDROID_HOME or ANDROID_SDK_ROOT must point to an Android SDK." >&2
   exit 1
 fi
 
-if [[ ! -f "$PATCH_FILE" ]]; then
-  echo "Patch not found: $PATCH_FILE" >&2
+if [[ ! -f "$PATCH_ARCHIVE" ]]; then
+  echo "Patch archive not found: $PATCH_ARCHIVE" >&2
   exit 1
 fi
 
-mkdir -p "$(dirname "$WORK_DIR")" "$DIST_DIR"
+mkdir -p "$WORK_ROOT" "$(dirname "$WORK_DIR")" "$DIST_DIR"
+base64 --decode "$PATCH_ARCHIVE" | gzip --decompress > "$PATCH_FILE"
 
 if [[ ! -d "$WORK_DIR/.git" ]]; then
   rm -rf "$WORK_DIR"
